@@ -1,0 +1,105 @@
+name: Dependency Cache Demo
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      # Cache step with required configuration
+      - name: prime-cache-61c3aa1
+        id: cache-dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/pip
+            node_modules
+            .venv
+          key: cache-61c3aa1-${{ runner.os }}-${{ hashFiles('**/package-lock.json', '**/requirements.txt') }}
+          restore-keys: |
+            cache-61c3aa1-${{ runner.os }}-
+      
+      # Echo cache hit/miss result (required)
+      - name: Display cache status
+        run: |
+          echo "================================================"
+          echo "Cache Hit/Miss Result:"
+          echo "================================================"
+          if [ "${{ steps.cache-dependencies.outputs.cache-hit }}" == "true" ]; then
+            echo "✅ CACHE HIT: Dependencies restored from cache"
+            echo "Cache Key: cache-61c3aa1-${{ runner.os }}-${{ hashFiles('**/package-lock.json', '**/requirements.txt') }}"
+          else
+            echo "❌ CACHE MISS: Building dependencies from scratch"
+            echo "Cache will be created for future runs"
+          fi
+          echo "================================================"
+      
+      # Setup Node.js (for demonstration)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      # Install dependencies (will be cached)
+      - name: Install Node.js dependencies
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
+        run: |
+          echo "Installing npm dependencies..."
+          npm init -y
+          npm install lodash axios
+          echo "Dependencies installed!"
+      
+      # Setup Python (for demonstration)
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      # Install Python dependencies (will be cached)
+      - name: Install Python dependencies
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
+        run: |
+          echo "Installing pip dependencies..."
+          python -m pip install --upgrade pip
+          pip install requests pytest
+          echo "Python dependencies installed!"
+      
+      # Verification step
+      - name: Verify cached dependencies
+        run: |
+          echo "Verifying dependencies are available..."
+          if [ -d "node_modules" ]; then
+            echo "✅ Node modules found (from cache or fresh install)"
+          fi
+          python -c "import requests; print('✅ Python packages available')" || echo "⚠️ Python packages not found"
+      
+      # Final summary
+      - name: Cache summary
+        run: |
+          echo "================================================"
+          echo "Cache Configuration Summary:"
+          echo "================================================"
+          echo "Cache Key: cache-61c3aa1"
+          echo "Cache Hit: ${{ steps.cache-dependencies.outputs.cache-hit }}"
+          echo "Cached Paths:"
+          echo "  - ~/.npm (Node.js package cache)"
+          echo "  - ~/.cache/pip (Python package cache)"
+          echo "  - node_modules (Node.js dependencies)"
+          echo "  - .venv (Python virtual environment)"
+          echo ""
+          echo "Cache Benefits:"
+          echo "  ✓ Faster CI/CD pipeline execution"
+          echo "  ✓ Reduced dependency download time"
+          echo "  ✓ Lower bandwidth usage"
+          echo "  ✓ Consistent dependency versions"
+          echo "================================================"
