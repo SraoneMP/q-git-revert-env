@@ -1,10 +1,18 @@
 # q-git-revert-env
 
-A Flask-based REST API service.
+A Flask-based REST API service with automated security updates via Dependabot.
+
+**Student Email**: 21f3000245@ds.study.iitm.ac.in
 
 ## Version
 
 8.0.0
+
+## Security Features
+
+- ✅ **Dependabot** configured for automated dependency updates
+- ✅ Weekly security scans for vulnerabilities
+- ✅ Automatic PR generation for CVE fixes
 
 ## Quick Start
 
